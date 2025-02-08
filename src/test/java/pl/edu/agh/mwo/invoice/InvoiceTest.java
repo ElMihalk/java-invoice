@@ -27,11 +27,6 @@ public class InvoiceTest {
     }
 
     @Test
-    public void testEmptyInvoiceHasEmptyTaxAmount() {
-        Assert.assertThat(BigDecimal.ZERO, Matchers.comparesEqualTo(invoice.getTax()));
-    }
-
-    @Test
     public void testEmptyInvoiceHasEmptyTotal() {
         Assert.assertThat(BigDecimal.ZERO, Matchers.comparesEqualTo(invoice.getTotal()));
     }
@@ -43,6 +38,11 @@ public class InvoiceTest {
         invoice.addProduct(onions);
         invoice.addProduct(apples);
         Assert.assertThat(new BigDecimal("20"), Matchers.comparesEqualTo(invoice.getSubtotal()));
+    }
+
+    @Test
+    public void testEmptyInvoiceHasEmptyTaxAmount() {
+        Assert.assertThat(BigDecimal.ZERO, Matchers.comparesEqualTo(invoice.getTax()));
     }
 
     @Test
