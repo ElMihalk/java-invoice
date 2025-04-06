@@ -13,6 +13,8 @@ import pl.edu.agh.mwo.invoice.product.OtherProduct;
 import pl.edu.agh.mwo.invoice.product.Product;
 import pl.edu.agh.mwo.invoice.product.TaxFreeProduct;
 
+import static java.lang.String.format;
+
 public class InvoiceTest {
     private Invoice invoice;
 
@@ -124,5 +126,33 @@ public class InvoiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void testAddingNullProduct() {
         invoice.addProduct(null);
+    }
+
+    @Test
+    public void testAutomaticInvoiceID() {
+        Invoice invoice1 = new Invoice();
+        Invoice invoice2 = new Invoice();
+        Invoice invoice3 = new Invoice();
+        int first_invoice_id = invoice1.getId();
+        Assert.assertEquals(first_invoice_id+1, invoice2.getId());
+        Assert.assertEquals(first_invoice_id+2, invoice3.getId());
+    }
+
+    @Test
+    public void testInvoiceStringGeneration(){
+        Invoice invoice = new Invoice();
+        invoice.addProduct(new TaxFreeProduct("Kubek", new BigDecimal("5")), 2);
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
+        invoice.addProduct(new OtherProduct("Pinezka", new BigDecimal("0.01")), 1000);
+        invoice.addProduct(new TaxFreeProduct("Chleb", new BigDecimal("5")), 2);
+        invoice.addProduct(new DairyProduct("Chedar", new BigDecimal("10")), 3);
+        invoice.addProduct(new OtherProduct("Pinezka", new BigDecimal("0.01")), 1000);
+        String expectedString = format("""
+                %d
+                Kubek 2 10
+                Kozi Serek 3 30
+                Pinezka 1000 0.01
+                Liczba pozycji: %d
+                """, invoice.getId(), invoice.getProductNumber());
     }
 }

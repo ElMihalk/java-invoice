@@ -8,6 +8,18 @@ import pl.edu.agh.mwo.invoice.product.Product;
 
 public class Invoice {
     private Map<Product, Integer> products = new HashMap<Product, Integer>();
+    private static int invoice_count = 1;
+
+    private int id;
+
+    public Invoice() {
+        this.id = invoice_count;
+        invoice_count++;
+    }
+
+    public int getId() {
+        return this.id;
+    }
 
     public void addProduct(Product product) {
         addProduct(product, 1);
@@ -18,6 +30,16 @@ public class Invoice {
             throw new IllegalArgumentException();
         }
         products.put(product, quantity);
+    }
+
+    public String generateDescription(){
+        return String.format("""
+                %d\n
+                """, this.id);
+    }
+
+    public int getProductNumber(){
+        return this.products.size();
     }
 
     public BigDecimal getNetTotal() {
