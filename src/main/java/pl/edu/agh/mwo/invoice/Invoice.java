@@ -21,11 +21,11 @@ public class Invoice {
         return this.id;
     }
 
-    public static void resetId(){
+    public static void resetId() {
         invoice_count = 1;
     }
 
-    public Map<Product, Integer> getProducts(){
+    public Map<Product, Integer> getProducts() {
         return this.products;
     }
 
@@ -37,31 +37,44 @@ public class Invoice {
         if (product == null || quantity <= 0) {
             throw new IllegalArgumentException();
         }
-        if (!this.products.keySet().stream().map(prod -> prod.getName()).toList().contains(product.getName())) {
+        if (!this.products.keySet().stream()
+                .map(prod -> prod.getName())
+                .toList()
+                .contains(product.getName())) {
             products.put(product, quantity);
         } else {
-            products.put(getProductByName(product.getName()), products.get(getProductByName(product.getName()))+quantity);
+            products.put(
+                    getProductByName(product.getName()),
+                    products.get(getProductByName(product.getName())) + quantity
+            );
         }
     }
 
-    public String generateDescription(){
-        StringBuilder invoiceDescription = new StringBuilder(String.format("Faktura nr %s\n", this.id));
-        for (Map.Entry<Product, Integer> entry : this.products.entrySet()){
+    public String generateDescription() {
+        StringBuilder invoiceDescription = new StringBuilder(
+                String.format("Faktura nr %s\n", this.id)
+        );
+        for (Map.Entry<Product, Integer> entry : this.products.entrySet()) {
             invoiceDescription.append(String.format(
                     "%s Liczba sztuk: %d Cena j. %f\n",
                     entry.getKey().getName(), entry.getValue(), entry.getKey().getPrice()
             ));
         }
-        invoiceDescription.append(String.format("Liczba pozycji na fakturze: %d", this.products.size()));
+        invoiceDescription.append(
+                String.format("Liczba pozycji na fakturze: %d", this.products.size())
+        );
         return String.valueOf(invoiceDescription);
     }
 
-    public int getProductNumber(){
+    public int getProductNumber() {
         return this.products.size();
     }
 
-    public Product getProductByName(String productName){
-        return this.products.keySet().stream().filter(prod -> prod.getName().equals(productName)).toList().get(0);
+    public Product getProductByName(String productName) {
+        return this.products.keySet().stream()
+                .filter(prod -> prod.getName().equals(productName))
+                .toList()
+                .get(0);
     }
 
     public BigDecimal getNetTotal() {
