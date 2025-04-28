@@ -1,6 +1,10 @@
 package pl.edu.agh.mwo.invoice;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.time.LocalDate;
+import java.time.Month;
+import java.util.Arrays;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -8,10 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import pl.edu.agh.mwo.invoice.Invoice;
-import pl.edu.agh.mwo.invoice.product.DairyProduct;
-import pl.edu.agh.mwo.invoice.product.OtherProduct;
-import pl.edu.agh.mwo.invoice.product.Product;
-import pl.edu.agh.mwo.invoice.product.TaxFreeProduct;
+import pl.edu.agh.mwo.invoice.product.*;
 
 import static java.lang.String.format;
 
@@ -139,20 +140,93 @@ public class InvoiceTest {
     }
 
     @Test
-    public void testInvoiceStringGeneration(){
+    public void testInvoiceStringGenerationReturnsString(){
+        Invoice.resetId();
+        Invoice invoice = new Invoice();
+        var description=invoice.generateDescription();
+        Assert.assertTrue(description instanceof String);
+    }
+
+    @Test
+    public void testInvoiceStringGenerationHasCorrectNumberOfLines(){
+        Invoice.resetId();
+        Invoice invoice = new Invoice();
+        invoice.addProduct(new TaxFreeProduct("Kubek", new BigDecimal("5")), 2);
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
+        Assert.assertEquals(invoice.generateDescription().lines().count(), 4);
+    }
+
+    @Test
+    public void testInvoiceStringGenerationHasCorrectInvoiceNumber(){
+        Invoice.resetId();
+        Invoice invoice = new Invoice();
+        invoice.addProduct(new TaxFreeProduct("Kubek", new BigDecimal("5")), 2);
+        Assert.assertEquals("Faktura nr 1", invoice.generateDescription().lines().toArray()[0]);
+    }
+
+    @Test
+    public void testInvoiceStringGenerationHasCorrectArticleNumber(){
+        Invoice.resetId();
+        Invoice invoice = new Invoice();
+        invoice.addProduct(new TaxFreeProduct("Kubek", new BigDecimal("5")), 2);
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
+        var invoiceLines = invoice.generateDescription().lines().toArray();
+        Assert.assertEquals("Liczba pozycji na fakturze: 2", invoiceLines[invoiceLines.length - 1]);
+    }
+
+    @Test
+    public void testInvoiceStringGenerationHasCorrectContent(){
+        Invoice.resetId();
         Invoice invoice = new Invoice();
         invoice.addProduct(new TaxFreeProduct("Kubek", new BigDecimal("5")), 2);
         invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
         invoice.addProduct(new OtherProduct("Pinezka", new BigDecimal("0.01")), 1000);
-        invoice.addProduct(new TaxFreeProduct("Chleb", new BigDecimal("5")), 2);
-        invoice.addProduct(new DairyProduct("Chedar", new BigDecimal("10")), 3);
-        invoice.addProduct(new OtherProduct("Pinezka", new BigDecimal("0.01")), 1000);
+        var invoiceLines = invoice.generateDescription().lines().toArray();
         String expectedString = format("""
-                %d
-                Kubek 2 10
-                Kozi Serek 3 30
-                Pinezka 1000 0.01
-                Liczba pozycji: %d
-                """, invoice.getId(), invoice.getProductNumber());
+                Faktura nr 1
+                Kubek Liczba sztuk: 2 Cena j. 5,000000
+                Kozi Serek Liczba sztuk: 3 Cena j. 10,000000
+                Pinezka Liczba sztuk: 1000 Cena j. 0,010000
+                Liczba pozycji na fakturze: 3""", invoice.getId(), invoice.getProductNumber());
+        Assert.assertTrue(Arrays.asList(invoiceLines).contains("Kubek Liczba sztuk: 2 Cena j. 5,000000"));
+        Assert.assertTrue(Arrays.asList(invoiceLines).contains("Kozi Serek Liczba sztuk: 3 Cena j. 10,000000"));
+        Assert.assertTrue(Arrays.asList(invoiceLines).contains("Pinezka Liczba sztuk: 1000 Cena j. 0,010000"));
+    }
+
+    @Test
+    public void testOnlyOneProductOnTheInvoiceWhenAddedTwice(){
+        Invoice.resetId();
+        Invoice invoice = new Invoice();
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
+        Assert.assertEquals(1, invoice.getProductNumber());
+    }
+
+    @Test
+    public void testProductAmountAddedOnTheInvoiceWhenAddedTwice(){
+        Invoice.resetId();
+        Invoice invoice = new Invoice();
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 3);
+        invoice.addProduct(new DairyProduct("Kozi Serek", new BigDecimal("10")), 5);
+        int amountActual = invoice.getProducts().get(invoice.getProductByName("Kozi Serek"));
+        Assert.assertEquals(8, amountActual);
+    }
+
+    @Test
+    public void testExciseProductHasCorrectPriceWithTax(){
+        Product product = new BottleOfWine("Chateau", new BigDecimal("40"));
+        Assert.assertEquals(new BigDecimal("54.76"), product.getPriceWithTax().round(new MathContext(4)));
+    }
+
+    @Test
+    public void testFuelProductHasCorrectPriceOnRegularDay(){
+        Product product = new FuelCanister("Olej rzepakowy", new BigDecimal("40"), LocalDate.of(2025, Month.APRIL, 15));
+        Assert.assertEquals(new BigDecimal("54.76"), product.getPriceWithTax().round(new MathContext(4)));
+    }
+
+    @Test
+    public void testFuelProductHasCorrectPriceOnMotherInLawDay(){
+        Product product = new FuelCanister("Olej rzepakowy", new BigDecimal("40"), LocalDate.of(2025, Month.MARCH, 5));
+        Assert.assertEquals(new BigDecimal("40"), product.getPriceWithTax().round(new MathContext(4)));
     }
 }
